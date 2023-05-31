@@ -37,13 +37,28 @@ class DevPlayground extends Command
     public function handle()
     {
         $url = 'https://assys.dev.br/rico/image-test/image-test-2bm.jpg';
+        //$url = 'https://assys.dev.br/rico/image-test/no-image.jpg';
         $imageContent = file_get_contents($url);
+        $checkImage = $this->validateImage($imageContent);
+
+        if (!$checkImage) {
+            dd('Image not valid');
+        }
 
         $imageName = $this->getNameImage($url);
         $urlImage = $this->saveImage($imageName, self::BIG_SIZE, $imageContent);
         $urlImageThumb = $this->saveImage($imageName, self::THUMBNAIL_SIZE, $imageContent);
-
         dd($urlImage, $urlImageThumb);
+    }
+
+    private function validateImage($imageContent): bool
+    {
+        $tmpfname = tempnam(sys_get_temp_dir(), "FOO");
+        $handle = fopen($tmpfname, "w");
+        fwrite($handle, $imageContent);
+        $size = getimagesize($tmpfname);
+
+        return $size !== false;
     }
 
     private function getNameImage(string $url): string
