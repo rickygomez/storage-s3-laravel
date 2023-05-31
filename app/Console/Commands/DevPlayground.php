@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Facades\Image;
+use Illuminate\Support\Str;
 
 class DevPlayground extends Command
 {
@@ -14,7 +15,19 @@ class DevPlayground extends Command
         'heigth' => '1000',
         'quality' => 60,
         'type' => 'jpg',
+        'prefix' => 'big_',
+        'folder' => '',
         'processor_type' => 'resize' // rezise, crop
+    ];
+
+    private const THUMBNAIL_SIZE = [
+        'width' => '300',
+        'heigth' => '200',
+        'quality' => 50,
+        'type' => 'jpg',
+        'prefix' => 'thumb_',
+        'folder' => 'thumb/',
+        'processor_type' => 'crop' // rezise, crop
     ];
 
     protected $signature = 'dev:playground';
@@ -23,21 +36,57 @@ class DevPlayground extends Command
 
     public function handle()
     {
-        $storage = Storage::disk(self::STORAGE_DISK);
-
         $url = 'https://assys.dev.br/rico/image-test/image-test-2bm.jpg';
         $imageContent = file_get_contents($url);
+
+        $imageName = $this->getNameImage($url);
+        $urlImage = $this->saveImage($imageName, self::BIG_SIZE, $imageContent);
+        $urlImageThumb = $this->saveImage($imageName, self::THUMBNAIL_SIZE, $imageContent);
+
+        dd($urlImage, $urlImageThumb);
+    }
+
+    private function getNameImage(string $url): string
+    {
         $imagePathInfo = pathinfo($url);
-        $imageProperties = getimagesize($url);
-        dump($imagePathInfo, $imageProperties);
-        $imageName = $imagePathInfo['basename'];
+        $originalFileName = $imagePathInfo['filename'];
+        $fileName = self::BIG_SIZE['prefix'] . $originalFileName;
+        $extension = self::BIG_SIZE['type'];
+        $path = self::BIG_SIZE['folder'];
 
-        $imageContentProcessed = $this->processorImage(self::BIG_SIZE, $imageContent);
+        $hashUnique = $this->hashName($fileName, $extension, $path );
 
-        $storage->put($imageName, $imageContentProcessed);
-        $urlImage = $storage->url($imageName);
+        $imageName = $originalFileName . $hashUnique . '.' . $extension;
+        return $imageName;
+    }
 
-        dd($urlImage);
+    private function hashName(string $fileName, string $extension, string $path = ''):string|null
+    {
+        $pathCheck = $path . $fileName . '.' . $extension;
+        $hash = null;
+
+        while ($this->checkExist($pathCheck)) {
+            $hash = '_' . Str::random(10);
+            $pathCheck = $path . $fileName . $hash . '.' . $extension;
+        }
+
+        return $hash;
+    }
+
+    private function checkExist($pathCheck): bool
+    {
+        return Storage::disk(self::STORAGE_DISK)->exists($pathCheck);
+
+    }
+
+    private function saveImage(string $imageName, array $imageSetup, string $imageContent):string
+    {
+        $storage = Storage::disk(self::STORAGE_DISK);
+        $pathImage = $imageSetup['folder'] . $imageSetup['prefix'] . $imageName;
+        $imageContentProcessed = $this->processorImage($imageSetup, $imageContent);
+
+        $storage->put($pathImage, $imageContentProcessed);
+        return $storage->url($pathImage);
     }
 
     private function processorImage(array $imageSetup, string $imageContent): string
