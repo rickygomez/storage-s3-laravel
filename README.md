@@ -15,6 +15,7 @@ This repository was created with the aim of being a study on storage S3 in larav
 
 - **GIT**: for versioning by Github
 - **Layer Service**: to manage Business Rules and manipulate Models
+- **[Intervention/image](https://github.com/Intervention/image)**: to resize images
 
 ---
 
