@@ -13,14 +13,13 @@ use Illuminate\Support\Str;
 
 class DevPlayground extends Command
 {
-    protected $signature = 'dev:playground';
+    protected $signature = 'dev:playground {url}';
 
     protected $description = 'Command for testing purposes';
 
     public function handle()
     {
-        $url = 'https://assys.dev.br/rico/image-test/image-test-2bm.jpg';
-        //$url = 'https://assys.dev.br/rico/image-test/no-image.jpg';
+        $url = $this->argument('url');
         $imageContent = file_get_contents($url);
         $imagePathInfo = pathinfo($url);
         $originalFileName = $imagePathInfo['filename'];
