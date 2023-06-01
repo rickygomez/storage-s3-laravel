@@ -9,7 +9,7 @@ $bigSize = MakeImageDTO::makeFromArray([
     'heigth' => 1000,
     'quality' => 60,
     'type' => 'jpg',
-    'prefix' => 'big_',
+    'prefix' => '',
     'folder' => '',
     'processorType' => 'resize' // rezise, crop
 ]);
