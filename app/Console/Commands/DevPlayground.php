@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\DTOs\MakeImageDTO;
+use App\Library\Image\ImageProcessor;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
-use Intervention\Image\Facades\Image;
 use Illuminate\Support\Str;
 
 class DevPlayground extends Command
@@ -16,9 +16,10 @@ class DevPlayground extends Command
 
     protected $description = 'Command for testing purposes';
 
-    private readonly MakeImageDTO $bigSize;
-    private readonly MakeImageDTO $thumbSize;
-    private readonly string $storageDisk;
+    private MakeImageDTO $bigSize;
+    private MakeImageDTO $thumbSize;
+    private string $storageDisk;
+    private string $imageContent;
 
     public function handle()
     {
@@ -29,32 +30,26 @@ class DevPlayground extends Command
         $url = 'https://assys.dev.br/rico/image-test/image-test-2bm.jpg';
         //$url = 'https://assys.dev.br/rico/image-test/no-image.jpg';
         $imageContent = file_get_contents($url);
-        $checkImage = $this->validateImage($imageContent);
 
-        if (!$checkImage) {
-            dd('Image not valid');
-        }
+        $imageProcessor = new ImageProcessor();
+        $processedImage = $imageProcessor->setImageSize($this->bigSize)
+            ->setImageContent($imageContent)
+            ->makeImage();
+        $processedImageThumb = $imageProcessor->setImageSize($this->thumbSize)
+            ->setImageContent($imageContent)
+            ->makeImage();
 
-        $imageName = $this->getNameImage($url);
-        $urlImage = $this->saveImage($imageName, $this->bigSize, $imageContent);
-        $urlImageThumb = $this->saveImage($imageName, $this->thumbSize, $imageContent);
+        $imagePathInfo = pathinfo($url);
+        $originalFileName = $imagePathInfo['filename'];
+
+        $imageName = $this->getNameImage($originalFileName);
+        $urlImage = $this->saveImage($imageName, $this->bigSize, $processedImage);
+        $urlImageThumb = $this->saveImage($imageName, $this->thumbSize, $processedImageThumb);
         dd($urlImage, $urlImageThumb);
     }
 
-    private function validateImage($imageContent): bool
+    private function getNameImage(string $originalFileName): string
     {
-        $tmpfname = tempnam(sys_get_temp_dir(), "FOO");
-        $handle = fopen($tmpfname, "w");
-        fwrite($handle, $imageContent);
-        $size = getimagesize($tmpfname);
-
-        return $size !== false;
-    }
-
-    private function getNameImage(string $url): string
-    {
-        $imagePathInfo = pathinfo($url);
-        $originalFileName = $imagePathInfo['filename'];
         $fileName = $this->bigSize->prefix . $originalFileName;
         $extension = $this->bigSize->type;
         $path = $this->bigSize->folder;
@@ -83,44 +78,12 @@ class DevPlayground extends Command
         return Storage::disk($this->storageDisk)->exists($pathCheck);
     }
 
-    private function saveImage(string $imageName, MakeImageDTO $imageSetup, string $imageContent): string
+    private function saveImage(string $imageName, MakeImageDTO $imageSetup, string $imageContentProcessed): string
     {
         $storage = Storage::disk($this->storageDisk);
         $pathImage = $imageSetup->folder . $imageSetup->prefix . $imageName;
-        $imageContentProcessed = $this->processorImage($imageSetup, $imageContent);
 
         $storage->put($pathImage, $imageContentProcessed);
         return $storage->url($pathImage);
-    }
-
-    private function processorImage(MakeImageDTO $imageSetup, string $imageContent): string
-    {
-        $processorImage = Image::make($imageContent);
-
-        switch ($imageSetup->processorType) {
-            case 'resize':
-                $processorImage->resize(
-                    $imageSetup->width,
-                    $imageSetup->heigth,
-                    function ($constraint) use ($imageSetup) {
-                        $constraint->aspectRatio();
-                        $constraint->upsize();
-                    }
-                );
-                break;
-            default:
-                $processorImage->fit(
-                    $imageSetup->width,
-                    $imageSetup->heigth
-                );
-                break;
-        }
-
-        $processorImage->encode(
-            $imageSetup->type,
-            $imageSetup->quality
-        );
-
-        return $processorImage->encoded;
     }
 }
