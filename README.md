@@ -59,3 +59,28 @@ php artisan storage:link
 ~~~shell
 php artisan optimize:clear
 ~~~
+
+
+## RUN
+
+### Terminal using command
+
+~~~shell
+php artisan dev:playground {url}
+~~~
+
+### API Endpoint
+
+the endpoint accepted the body paramenters 
+- "url" a string with the URL of the image 
+  or
+- "file" an imagem file
+
+~~~
+URI:  '/api/make-image'
+method: 'POST',
+body: {
+    url
+    file
+}
+~~~
