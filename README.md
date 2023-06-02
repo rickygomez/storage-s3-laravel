@@ -1,4 +1,4 @@
-# storage s3 in Laravel
+# Storage S3 in Laravel
 
 Author: Ricardo Gomez
 E-mail: ricardo@assys.com.br
@@ -73,6 +73,7 @@ php artisan storage:link
 php artisan optimize:clear
 ~~~
 
+---
 
 ## RUN
 
