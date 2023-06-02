@@ -26,7 +26,7 @@ $thumbnailSize = MakeImageDTO::makeFromArray([
 
 return [
 
-    'storage_disk' => 'image',
+    'storage_disk' => 'image-s3',
     'big_size' => $bigSize,
     'thumb_size' => $thumbnailSize
 
