@@ -93,6 +93,7 @@ class SaveImage
         $this->storage->put($pathImage, $imageContentProcessed);
         return  [
             'url' => $this->storage->url($pathImage),
+            'urlTemp' => $this->storage->temporaryUrl($pathImage, now()->addMinutes(10)),
             'path' => $pathImage,
         ];
     }
